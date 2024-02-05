@@ -1,2 +1,191 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+;******************************************************************************
+;Universidad del Valle de Guatemala
+;IE2023: Programación de Microcontroladores
+; Prelab_1.asm
+;Autor: Pablo Cano
+;Proyecto: Laboratorio
+;Hardware: ATMEGA328P
+;Creado: 28/01/2024
+;Última modificación: 28/01/2024
+;******************************************************************************
+
+;******************************************************************************
+; ENCABEZADO
+;******************************************************************************
+
+.include "M328PDEF.inc"
+.cseg
+.org 0x0000
+
+;******************************************************************************
+; Configuración de la Pila
+;******************************************************************************
+LDI R16, LOW(RAMEND)
+OUT SPL, R16
+LDI R17, HIGH(RAMEND)
+OUT SPH, R17
+;******************************************************************************
+
+;******************************************************************************
+; CONFIGURACION
+;******************************************************************************
+SETUP:
+	//Configurar Reloj
+	LDI R16, (1<< CLKPCE)
+	STS CLKPR, R16				//Habilita el prescaler
+	LDI R16, 0b0000_0100
+	STS CLKPR, R16
+
+	//CONFIGURAR PUERTOS I/O
+	SBI DDRB, PB0				//Definiendo PB0 como salida
+	SBI DDRB, PB1				//Definiendo PB1 como salida
+	SBI DDRB, PB2				//Definiendo PB2 como salida
+	SBI DDRB, PB3				//Definiendo PB3 como salida
+
+	SBI DDRB, PB4				//Definiendo PB4 como salida
+	SBI DDRB, PB5				//Definiendo PB5 como salida
+	SBI DDRC, PC0				//Definiendo PC0 como salida
+	SBI DDRC, PC1				//Definiendo PC1 como salida
+
+	SBI DDRC, PC2				//Definiendo PC2 como salida
+	SBI DDRC, PC3				//Definiendo PC3 como salida
+	SBI DDRC, PC4				//Definiendo PC4 como salida
+	SBI DDRC, PC5				//Definiendo PC5 como salida
+	SBI DDRD, PD2				//Definiendo PD2 como salida
+
+	CBI DDRD, PD3				//Definiendo PD3 como entrada
+	CBI DDRD, PD4				//Definiendo PD4 como entrada
+	CBI DDRD, PD5				//Definiendo PD5 como entrada
+	CBI DDRD, PD6				//Definiendo PD6 como entrada
+	CBI DDRD, PD7				//Definiendo PD7 como entrada
+
+	SBI PORTD, PD3				//Colocar PD3 como pullup
+	SBI PORTD, PD4				//Colocar PD2 como pullup
+	SBI PORTD, PD5				//Colocar PD2 como pullup
+	SBI PORTD, PD6				//Colocar PD2 como pullup
+	SBI PORTD, PD7				//Colocar PD2 como pullup
+
+
+	//INICIALIZAR VARIABLES
+	LDI R16, 0xFF
+	LDI R17, 0x00
+	LDI R18, 0x01
+	LDI R19, 0x00
+	LDI R20, 0x00
+
+//*****************************************************************************
+// LOOP
+//*****************************************************************************
+MAIN_LOOP:
+	IN		R16, PIND			//Carga PIND a R16
+	CPI		R16, 0b1111_0000	//Compara con un inmediato, viendo si presiono el primer botón
+	BREQ	DELAY				//Se va a dar un tiempo para verificar el botón en efecto fue presionado
+	IN		R16, PIND			//Se vuelve a cargar PIND en R16
+	CPI		R16, 0b1111_0111	//Compara con el inmediato, viendo otra vez si el primer botón esta presionado
+	BREQ	SUMA_N1				//En caso si este presionado el botón ir a suma_N1
+
+	IN		R16, PIND			//Carga PIND a R16
+	CPI		R16, 0b1110_1111	//Compara con un inmediato, viendo si presiono el segundo botón
+	BREQ	DELAY				//Se va a dar un tiempo para verificar el botón en efecto fue presionado
+	IN		R16, PIND			//Se vuelve a cargar PIND en R16
+	CPI		R16, 0b1110_1111	//Compara con el inmediato, viendo otra vez si el segundo botón esta presionado
+	BREQ	RESTA_N1			//En caso si este presionado el botón ir a Resta_N1
+
+	IN		R16, PIND			//Carga PIND a R16
+	CPI		R16, 0b1101_1111	//Compara con un inmediato, viendo si presiono el tercer botón
+	BREQ	DELAY				//Se va a dar un tiempo para verificar el botón en efecto fue presionado
+	IN		R16, PIND			//Se vuelve a cargar PIND en R16
+	CPI		R16, 0b1101_1111	//Compara con el inmediato, viendo otra vez si el tercer botón esta presionado
+	BREQ	SUMA_N2				//En caso si este presionado el botón ir a Suma_n2
+
+	IN		R16, PIND			//Carga PIND a R16
+	CPI		R16, 0b1011_1111	//Compara con un inmediato, viendo si presiono el cuarto botón
+	BREQ	DELAY				//Se va a dar un tiempo para verificar el botón en efecto fue presionado
+	IN		R16, PIND			//Se vuelve a cargar PIND en R16
+	CPI		R16, 0b1011_1111	//Compara con el inmediato, viendo otra vez si el cuarto botón esta presionado
+	BREQ	RESTA_N2			//En caso si este presionado el botón ir a Resta_N2
+
+	IN		R16, PIND			//Carga PIND a R16
+	CPI		R16, 0b0111_1111	//Compara con un inmediato, viendo si presiono el quinto botón
+	BREQ	DELAY				//Se va a dar un tiempo para verificar el botón en efecto fue presionado
+	IN		R16, PIND			//Se vuelve a cargar PIND en R16
+	CPI		R16, 0b0111_1111	//Compara con el inmediato, viendo otra vez si el quinto botón esta presionado
+	BREQ	SUMA_TOTAL			//En caso si este presionado el botón ir a SUMA_TOTAL
+	RJMP MAIN_LOOP
+
+//*****************************************************************************
+// Funciones
+//*****************************************************************************
+
+DELAY:
+	LDI		R16, 100			//Designarle un numero a R16 para "contar"
+LOOP_DELAY:
+	DEC		R16					//Disminuirle en 1 a R16
+	BRNE	LOOP_DELAY			//Volver a loop delay hasta que llegue a 0
+	RET							//Volver a donde fue llamado
+
+SUMA_N1:
+	IN		R16, PIND			//Asignarle el valor de PIND a R16
+	SBRC	R16, PD3			//Saltar la siguiente línea si el botón sigue presionado
+	ADD		R17, R18			//Sumar a R17 (el registro donde esta el número) con R18(1)
+	CPI		R16, 0b1111_1111	//Comparar R16 con un inmediato, y si no se cumple volver a SUMA_N1
+	BRNE	SUMA_N1				//Saltar a Suma_N1
+	OUT		PB0, R17			//Poner R17 en PB0
+	OUT		PB1, R17			//Poner R17 en PB1
+	OUT		PB2, R17			//Poner R17 en PB2
+	OUT		PB3, R17			//Poner R17 en PB3
+	RET							//Retornar a donde lo llamaron
+
+RESTA_N1:
+	IN		R16, PIND			//Asignarle el valor de PIND a R16
+	SBRC	R16, PD4			//Saltar la siguiente línea si el botón sigue presionado
+	SUB		R17, R18			//Restar a R17 (el registro donde esta el número) con R18(1)
+	CPI		R16, 0b1111_1111	//Comparar R16 con un inmediato, y si no se cumple volver a Resta_n1
+	BRNE	RESTA_N1			//Saltar a RESTA_N1
+	OUT		PB0, R17			//Poner R17 en PB0
+	OUT		PB1, R17			//Poner R17 en PB1
+	OUT		PB2, R17			//Poner R17 en PB2
+	OUT		PB3, R17			//Poner R17 en PB3
+	RET							//Retornar a donde lo llamaron
+
+SUMA_N2:
+	IN		R16, PIND			//Asignarle el valor de PIND a R16
+	SBRC	R16, PD5			//Saltar la siguiente línea si el botón sigue presionado
+	ADD		R19, R18			//Sumar a R19 (el registro donde esta el número) con R18(1)
+	CPI		R16, 0b1111_1111	//Comparar R16 con un inmediato, y si no se cumple volver a SUMA_N2
+	BRNE	SUMA_N2				//Saltar a SUMA_N2
+	OUT		PB4, R19			//Poner R19 en PB4
+	OUT		PB5, R19			//Poner R19 en PB5
+	OUT		PC0, R19			//Poner R19 en PC0
+	OUT		PC1, R19			//Poner R19 en PC1
+	RET							//Retornar a donde lo llamaron
+
+RESTA_N2:
+	IN		R16, PIND			//Asignarle el valor de PIND a R16
+	SBRC	R16, PD6			//Saltar la siguiente línea si el botón sigue presionado
+	ADD		R19, R18			//Restar a R19 (el registro donde esta el número) con R18(1)
+	CPI		R16, 0b1111_1111	//Comparar R16 con un inmediato, y si no se cumple volver a SUMA_N2
+	BRNE	RESTA_N2			//Saltar a RESTA_N2
+	OUT		PB4, R19			//Poner R19 en PB4
+	OUT		PB5, R19			//Poner R19 en PB5
+	OUT		PC0, R19			//Poner R19 en PC0
+	OUT		PC1, R19			//Poner R19 en PC1
+	RET							//Retornar a donde lo llamaron
+
+SUMA_TOTAL:
+	IN		R16, PIND			//Asignarle el valor de PIND a R16
+	SBRC	R16, PD6			//Saltar la siguiente línea si el botón sigue presionado
+	ADD		R19, R17			//Restar a R19 (el registro donde esta el número) con R17 (el otro número)
+	CPI		R16, 0b1111_1111	//Comparar R16 con un inmediato, y si no se cumple volver a SUMA_TOTAL
+	BRNE	SUMA_TOTAL			//Saltar a SUMA_TOTAL
+	MOV		R20, R19			//Mover el resultado a R20
+	LDI		R19, 0X00			//Poner a cero R19 para nueva suma
+	LDI		R17, 0X00			//Poner a cero R17 para nueva suma
+	OUT		PC2, R20			//Poner R20 en PC2
+	OUT		PC3, R20			//Poner R20 en PC3
+	OUT		PC4, R20			//Poner R20 en PC4
+	OUT		PC5, R20			//Poner R20 en PC5
+	OUT		PD2, R20			//Poner R20 en PD2
+	RET							//Retornar a donde lo llamaron
